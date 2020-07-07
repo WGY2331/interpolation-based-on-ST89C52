@@ -1,1 +1,0 @@
-"code\key_lcd.c" ROM(COMPACT) OPTIMIZE (8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\key_lcd.lst) OBJECT(.\Objects\key_lcd.obj)
