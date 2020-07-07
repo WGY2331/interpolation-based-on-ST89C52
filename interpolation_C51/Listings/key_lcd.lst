@@ -1,0 +1,441 @@
+C51 COMPILER V9.54   KEY_LCD                                                               06/16/2020 23:22:42 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE KEY_LCD
+OBJECT MODULE PLACED IN .\Objects\key_lcd.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE code\key_lcd.c ROM(COMPACT) OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND 
+                    -PRINT(.\Listings\key_lcd.lst) OBJECT(.\Objects\key_lcd.obj)
+
+line level    source
+
+   1          #include"key_lcd.h"
+   2          #include"drive.h"
+   3          extern uint n;
+   4          uchar starnum = 0;      //判断按了第几次*
+   5          uchar numcheck = 0;//判断数字按过几次
+   6          
+   7          uchar KeyScan()  //键盘扫描函数，使用行列反转扫描法
+   8          {
+   9   1              unsigned char cord_h, cord_l;//行列值
+  10   1              P3 = 0x0f;            //行线输出全为0
+  11   1              cord_h = P3 & 0x0f;     //读入行值
+  12   1              if (cord_h != 0x0f)    //先检测有无按键按下
+  13   1              {
+  14   2                      delay(10);        //去抖
+  15   2                      if ((P3 & 0x0f) != 0x0f)
+  16   2                      {
+  17   3                              cord_h = P3 & 0x0f;  //读入行值
+  18   3                              P3 = cord_h | 0xf0;  //输出当前行值
+  19   3                              cord_l = P3 & 0xf0;  //读入列值
+  20   3                              while ((P3 & 0xf0) != 0xf0);//等待松开并输出
+  21   3                              return(cord_h + cord_l);//键盘最后组合码值
+  22   3                      }
+  23   2              }
+  24   1              return(0xff);  //返回该值
+  25   1      }
+  26          
+  27          
+  28          
+  29          uchar KeyValue()//编码
+  30          {
+  31   1              switch (KeyScan())
+  32   1              {
+  33   2              case 0xee:return '7';  //按下相应的键显示相对应的码值
+  34   2              case 0xde:return '8';
+  35   2              case 0xbe:return '9';// 7       8       9       a
+  36   2              case 0x7e:return 'a';// 4       5       6       b 
+  37   2              case 0xed:return '4';// 1       2       3       c 
+  38   2              case 0xdd:return '5';// *       0       #       d 
+  39   2              case 0xbd:return '6';
+  40   2              case 0x7d:return 'b';
+  41   2              case 0xeb:return '1';
+  42   2              case 0xdb:return '2';
+  43   2              case 0xbb:return '3';
+  44   2              case 0x7b:return 'c';
+  45   2              case 0xe7:return '*';
+  46   2              case 0xd7:return '0';
+  47   2              case 0xb7:return '#';
+  48   2              case 0x77:return 'd';
+  49   2              default:return 0xff;
+  50   2              }
+  51   1      }
+  52          
+  53          
+  54          void lcd_init()//初始化函数体
+C51 COMPILER V9.54   KEY_LCD                                                               06/16/2020 23:22:42 PAGE 2   
+
+  55          {
+  56   1              EN = 0;
+  57   1              delay(5);
+  58   1              lcd_wcom(0x38);//设置16*2显示，5*7点阵，8位数据接口
+  59   1              delay(5);
+  60   1              lcd_wcom(0x0c);//设置开显示，不显示光标
+  61   1              delay(5);
+  62   1              lcd_wcom(0x06);//写一个字符时，整屏右移
+  63   1              delay(5);
+  64   1              lcd_wcom(0x01);//显示清零
+  65   1              lcd_line();//显示直线界面
+  66   1      
+  67   1      }
+  68          
+  69          void lcd_wcom(uchar com)//写命令的函数体
+  70          {
+  71   1              while (lcd_busy()); //忙则等待
+  72   1              RS = 0;
+  73   1              RW = 0;
+  74   1              EN = 1;
+  75   1              P0 = com;
+  76   1              _nop_();
+  77   1              EN = 0;
+  78   1      }
+  79          
+  80          void lcd_wdata(uchar date)//写数据的函数体
+  81          {
+  82   1              while (lcd_busy()); //忙则等待
+  83   1              RS = 1;
+  84   1              RW = 0;
+  85   1              EN = 1;
+  86   1              P0 = date;
+  87   1              _nop_();
+  88   1              EN = 0;
+  89   1      }
+  90          
+  91          bit lcd_busy() {
+  92   1              P0 = 0xFF;
+  93   1              RS = 0;
+  94   1              RW = 1;
+  95   1              EN = 0;
+  96   1              _nop_();
+  97   1              EN = 1;
+  98   1              return (bit)(P0 & 0x80);
+  99   1      }
+ 100          void lcd_line() {
+ 101   1              lcd_wcom(0x01);
+ 102   1      
+ 103   1              lcd_wcom(0x80);
+ 104   1              lcd_wdata('X');//终点
+ 105   1              lcd_wdata('e');
+ 106   1              lcd_wdata('0');
+ 107   1              lcd_wdata('0');
+ 108   1      
+ 109   1      
+ 110   1              lcd_wcom(0x80 + 5);
+ 111   1              lcd_wdata('Y');
+ 112   1              lcd_wdata('e');
+ 113   1              lcd_wdata('0');
+ 114   1              lcd_wdata('0');
+ 115   1      
+ 116   1              lcd_wcom(0x80 + 10);
+C51 COMPILER V9.54   KEY_LCD                                                               06/16/2020 23:22:42 PAGE 3   
+
+ 117   1              lcd_wdata('s');
+ 118   1              lcd_wdata('p');
+ 119   1              lcd_wdata('d');
+ 120   1              lcd_wdata(':');
+ 121   1              lcd_wdata('0');
+ 122   1      
+ 123   1              lcd_wcom(0xc0);
+ 124   1              lcd_wdata('X');
+ 125   1              lcd_wdata(':');
+ 126   1              lcd_wcom(0xc0 + 6);
+ 127   1              lcd_wdata('.');
+ 128   1      
+ 129   1              lcd_wcom(0xc0 + 8);
+ 130   1              lcd_wdata('Y');
+ 131   1              lcd_wdata(':');
+ 132   1              lcd_wcom(0xc0 + 14);
+ 133   1              lcd_wdata('.');
+ 134   1      }
+ 135          void lcd_cir() {
+ 136   1              lcd_wcom(0x01);
+ 137   1      
+ 138   1              lcd_wcom(0x80);
+ 139   1              lcd_wdata('A');//角度
+ 140   1              lcd_wdata('0');
+ 141   1              lcd_wdata('0');
+ 142   1              lcd_wdata('0');
+ 143   1      
+ 144   1              lcd_wcom(0x80 + 4);
+ 145   1              lcd_wdata('S');
+ 146   1              lcd_wdata('0');
+ 147   1      
+ 148   1              lcd_wcom(0x80 + 6);
+ 149   1              lcd_wdata('C');
+ 150   1              lcd_wdata('1');
+ 151   1      
+ 152   1              lcd_wcom(0x80 + 8);
+ 153   1              lcd_wdata('X');
+ 154   1              lcd_wdata('c');
+ 155   1              lcd_wdata('0');
+ 156   1              lcd_wdata('0');
+ 157   1      
+ 158   1              lcd_wcom(0x80 + 12);
+ 159   1              lcd_wdata('Y');
+ 160   1              lcd_wdata('c');
+ 161   1              lcd_wdata('0');
+ 162   1              lcd_wdata('0');
+ 163   1      
+ 164   1              lcd_wcom(0xc0);
+ 165   1              lcd_wdata('X');
+ 166   1              lcd_wdata(':');
+ 167   1              lcd_wcom(0xc0 + 6);
+ 168   1              lcd_wdata('.');
+ 169   1      
+ 170   1              lcd_wcom(0xc0 + 8);
+ 171   1              lcd_wdata('Y');
+ 172   1              lcd_wdata(':');
+ 173   1              lcd_wcom(0xc0 + 14);
+ 174   1              lcd_wdata('.');
+ 175   1      }
+ 176          
+ 177          void GUI() {
+ 178   1      
+C51 COMPILER V9.54   KEY_LCD                                                               06/16/2020 23:22:42 PAGE 4   
+
+ 179   1              static bit keyin = 0;//不可输入键盘
+ 180   1              uchar value = 0;        //键盘值
+ 181   1              extern int angle;
+ 182   1              extern uint spd;
+ 183   1              extern bit shape;
+ 184   1              extern bit clcwise;
+ 185   1              extern bit cirendflag;
+ 186   1              extern int Xc, Yc, Xe, Ye;
+ 187   1              extern uchar code numtable[];
+ 188   1      
+ 189   1              value = KeyValue();//扫描键盘
+ 190   1              if (value == '#') {
+ 191   2                      if(n){//急停
+ 192   3                              TR1 = 0;
+ 193   3                              TR0 = 0;
+ 194   3                              n = 0;
+ 195   3                              cirendflag = 1;
+ 196   3                      }
+ 197   2                      else{
+ 198   3                              if(shape)
+ 199   3                                      startline(Xe,Ye);
+ 200   3                              else startcir(Xc,Yc,angle,clcwise);
+ 201   3                      }
+ 202   2              }
+ 203   1              else if (!n && value == 'a') {
+ 204   2                      pop();
+ 205   2              }
+ 206   1              else if (value == 'b') {
+ 207   2                      if(spd > 5000)
+ 208   2                              spd = spd -  5000;
+ 209   2                      if (shape)//直线
+ 210   2                              lcd_wcom(0x80 + 14);
+ 211   2                      else //圆弧
+ 212   2                              lcd_wcom(0x80 + 5);
+ 213   2                      lcd_wdata(numtable[10 - spd / 5000]);
+ 214   2              }
+ 215   1              else if (value == 'c') {
+ 216   2                      if(spd < 50000)
+ 217   2                              spd = spd + 5000;
+ 218   2                      if (shape)//直线
+ 219   2                              lcd_wcom(0x80 + 14);
+ 220   2                      else //圆弧
+ 221   2                              lcd_wcom(0x80 + 5);
+ 222   2                      lcd_wdata(numtable[10 - spd / 5000]);
+ 223   2              }
+ 224   1              else if(value=='d'){
+ 225   2                      
+ 226   2                      if(shape){
+ 227   3                              shape=0;
+ 228   3                              lcd_cir();
+ 229   3                      }
+ 230   2                      else {
+ 231   3                              shape=1;
+ 232   3                              lcd_line();
+ 233   3                      }
+ 234   2                      
+ 235   2                      
+ 236   2              }
+ 237   1      
+ 238   1              if (shape&& (!n || cirendflag)) {//直线界面
+ 239   2                      if (value == '*') {
+ 240   3                              numcheck = 0;
+C51 COMPILER V9.54   KEY_LCD                                                               06/16/2020 23:22:42 PAGE 5   
+
+ 241   3                              starnum++;//功能键按下次数记录
+ 242   3                              switch (starnum) {
+ 243   4                              case 1:
+ 244   4                                      lcd_wcom(0x80 + 2);//第1次按下光标闪烁定位到角度位置
+ 245   4                                      lcd_wcom(0x0f); //光标开始闪烁
+ 246   4                                      keyin = 1;//可以输入
+ 247   4                                      break;
+ 248   4                              case 2:
+ 249   4                                      lcd_wcom(0x80 + 7);//第2次按下光标闪烁定位到速度位置
+ 250   4                                      break;
+ 251   4                              case 3:
+ 252   4                                      lcd_wcom(0x80 + 14);//第3次按下光标闪烁定位到顺逆时针位置
+ 253   4                                      break;
+ 254   4                              default:
+ 255   4                                      starnum = 0;//记录按键数清零
+ 256   4                                      lcd_wcom(0x0c); //取消光标闪烁
+ 257   4                                      keyin = 0;//不可输入
+ 258   4                              }
+ 259   3                      }
+ 260   2                      else if (keyin&&value >= '0'&&value <= '9') {
+ 261   3                              switch (starnum) {
+ 262   4                              case 1:
+ 263   4                                      innum(2,  value,1);
+ 264   4                                      break;
+ 265   4                              case 2:
+ 266   4                                      innum(7,  value,2);
+ 267   4                                      break;
+ 268   4                              case 3:
+ 269   4                                      lcd_wcom(0x80 + 14);
+ 270   4                                      lcd_wdata(value);
+ 271   4                                      spd = 50000 - 5000 * (value - '0');
+ 272   4                                      starnum = 4;
+ 273   4                                      break;
+ 274   4                              default:
+ 275   4                                      starnum = 0;//记录按键数清零
+ 276   4                                      lcd_wcom(0x0c); //取消光标闪烁
+ 277   4                                      keyin = 0;//不可输入
+ 278   4                              }
+ 279   3                      }
+ 280   2              }
+ 281   1              else if( !shape && (!n || cirendflag)) {//圆弧界面
+ 282   2                      if (value == '*') {
+ 283   3                              numcheck = 0;
+ 284   3                              starnum++;//功能键按下次数记录
+ 285   3                              switch (starnum) {
+ 286   4                              case 1:
+ 287   4                                      lcd_wcom(0x80 + 1);//第1次按下光标闪烁定位到角度位置
+ 288   4                                      lcd_wcom(0x0f); //光标开始闪烁
+ 289   4                                      keyin = 1;//可以输入
+ 290   4                                      break;
+ 291   4                              case 2:
+ 292   4                                      lcd_wcom(0x80 + 5);//第2次按下光标闪烁定位到速度位置
+ 293   4                                      break;
+ 294   4                              case 3:
+ 295   4                                      lcd_wcom(0x80 + 7);//第3次按下光标闪烁定位到顺逆时针位置
+ 296   4                                      break;
+ 297   4                              case 4:
+ 298   4                                      lcd_wcom(0x80 + 10);//第4次按下光标闪烁定位到圆心X位置
+ 299   4                                      break;
+ 300   4                              case 5:
+ 301   4                                      lcd_wcom(0x80 + 14);//第三次按下光标闪烁定位到圆心Y位置
+ 302   4                                      break;
+C51 COMPILER V9.54   KEY_LCD                                                               06/16/2020 23:22:42 PAGE 6   
+
+ 303   4                              default:
+ 304   4                                      starnum = 0;//记录按键数清零
+ 305   4                                      lcd_wcom(0x0c); //取消光标闪烁
+ 306   4                                      keyin = 0;//不可输入
+ 307   4                              }
+ 308   3                      }
+ 309   2                      else if (keyin&&value >= '0'&&value <= '9') {
+ 310   3                              switch (starnum) {
+ 311   4                              case 1:         //输入角度
+ 312   4                                      if (numcheck == 0) {
+ 313   5                                              lcd_wcom(0x80 + 1);//清此处屏幕
+ 314   5                                              lcd_wdata(0x20);
+ 315   5                                              lcd_wdata(0x20);
+ 316   5                                              lcd_wdata(0x20);
+ 317   5      
+ 318   5                                              angle = (value - '0');
+ 319   5                                              lcd_wcom(0x80 + 1);//按1下
+ 320   5                                              lcd_wdata(value);
+ 321   5                                              lcd_wcom(0x80 + 2);
+ 322   5                                              numcheck++;
+ 323   5                                      }
+ 324   4                                      else if (numcheck == 1) {
+ 325   5                                              angle = angle * 10 + (value - '0');//按2下
+ 326   5                                              lcd_wcom(0x80 + 2);
+ 327   5                                              lcd_wdata(value);
+ 328   5                                              lcd_wcom(0x80 + 3);
+ 329   5                                              numcheck++;
+ 330   5                                      }
+ 331   4                                      else if (numcheck == 2) {
+ 332   5                                              angle = angle * 10 + (value - '0');//按3下
+ 333   5                                              lcd_wcom(0x80 + 3);
+ 334   5                                              lcd_wdata(value);
+ 335   5                                              numcheck = 0;
+ 336   5                                              
+ 337   5                                      }
+ 338   4                                      break;
+ 339   4                              case 2:
+ 340   4                                      spd = 50000 - 5000 * (value - '0');
+ 341   4                                      lcd_wcom(0x80 + 5);
+ 342   4                                      lcd_wdata(value);
+ 343   4                                      //lcd_wcom(0x80 + 7);
+ 344   4                                      //starnum = 3;
+ 345   4                                      break;
+ 346   4                              case 3:
+ 347   4                                      if (value == '0')
+ 348   4                                              clcwise = 0;
+ 349   4                                      else clcwise = 1;
+ 350   4                                      lcd_wcom(0x80 + 7);
+ 351   4                                      lcd_wdata(value);
+ 352   4                                      //starnum = 4;
+ 353   4                                      //lcd_wcom(0x80 + 10);
+ 354   4                                      break;
+ 355   4                              case 4:
+ 356   4                                      innum(10,  value, 3);
+ 357   4                                      //Xc = Xc * numcheck * 10 + innum(10, value);
+ 358   4                                      break;
+ 359   4                              case 5:
+ 360   4                                      innum(14,  value, 4);
+ 361   4                                      //Yc = Yc * numcheck * 10 + innum(14, value);
+ 362   4                                      break;
+ 363   4                              default:
+ 364   4                                      starnum = 0;//记录按键数清零
+C51 COMPILER V9.54   KEY_LCD                                                               06/16/2020 23:22:42 PAGE 7   
+
+ 365   4                                      lcd_wcom(0x0c); //取消光标闪烁
+ 366   4                                      keyin = 0;//不可输入
+ 367   4                              }
+ 368   3                      }
+ 369   2              }
+ 370   1                      value = 0xff;
+ 371   1      }
+ 372          
+ 373          
+ 374          void innum(char wz, char vl,char xy) {//几位，显示位置
+ 375   1              if (!numcheck) {//如果没按过数字
+ 376   2                      numcheck++;
+ 377   2                      lcd_wcom(0x80 + wz);//清此处屏幕
+ 378   2                      lcd_wdata(0x20);
+ 379   2                      lcd_wdata(0x20);
+ 380   2      
+ 381   2                      lcd_wcom(0x80 + wz);
+ 382   2                      lcd_wdata(vl);
+ 383   2                      lcd_wcom(0x80 + wz + 1);
+ 384   2                      switch(xy){
+ 385   3                              case 1:Xe=(vl - '0') * 150;break;
+ 386   3                              case 2:Ye=(vl - '0') * 150;break;
+ 387   3                              case 3:Xc=(vl - '0') * 150;break;
+ 388   3                              case 4:Yc=(vl - '0') * 150;break;
+ 389   3                      }
+ 390   2              }
+ 391   1              else  {
+ 392   2                      lcd_wcom(0x80 + wz + 1);
+ 393   2                      lcd_wdata(vl);
+ 394   2                      numcheck = 0;   
+ 395   2                      //starnum++;
+ 396   2                      switch(xy){
+ 397   3                              case 1:Xe=Xe*10+(vl - '0') * 150;break;
+ 398   3                              case 2:Ye=Ye*10+(vl - '0') * 150;break;
+ 399   3                              case 3:Xc=Xc*10+(vl - '0') * 150;break;
+ 400   3                              case 4:Yc=Yc*10+(vl - '0') * 150;break;
+ 401   3                      }
+ 402   2              }
+ 403   1              //return (vl - '0') * 150;
+ 404   1      }
+ 405          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1685    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

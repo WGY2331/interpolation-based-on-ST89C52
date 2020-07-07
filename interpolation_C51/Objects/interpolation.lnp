@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\key_lcd.obj",
+".\Objects\drive.obj" 
+TO ".\Objects\interpolation" 
+PRINT(".\Listings\interpolation.m51") RAMSIZE(256) 
