@@ -1,0 +1,6 @@
+*.c linguist-language=C
+*.h linguist-language=C
+*.uvopt linguist-language=C
+*.uvproj linguist-language=C
+*.A51 linguist-language=C
+*.vi linguist-language=LABVIEW
