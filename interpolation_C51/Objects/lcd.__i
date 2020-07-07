@@ -1,1 +1,0 @@
-"code\lcd.c" OPTIMIZE (8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\lcd.lst) OBJECT(.\Objects\lcd.obj)
